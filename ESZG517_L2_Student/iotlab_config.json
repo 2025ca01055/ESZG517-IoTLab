@@ -1,0 +1,31 @@
+{
+  "_comment": "IoTLab Framework Configuration — ESZG517",
+  "mqtt": {
+    "broker":   "f0cb0c0ce8894c3aaf72971b5d3d6782.s1.eu.hivemq.cloud",
+    "port":     8883,
+    "username": "2025ca01055",
+    "password": "Pasalkar@123",
+    "tls":      true,
+    "keepalive": 60,
+    "topics": {
+      "weather":    "eszg517/lab/weather",
+      "smarthome":  "eszg517/home",
+      "alerts":     "eszg517/alerts"
+    }
+  },
+  "influxdb": {
+    "url":    "https://us-east-1-1.aws.cloud2.influxdata.com/",
+    "token":  "t7QeA4-k9O_nvFo1dKsOG9-c8kZxJv0Kp3J2ZBZtYXxeerKEp2HxPAb6kAQujGJakBXAoPBJanHmW8h_9K3lCQ==",
+    "org":    "QUEST",
+    "bucket": "iotlab"
+  },
+  "device": {
+    "weather_id":   "ESZG517_WeatherNode_01",
+    "smarthome_id": "ESZG517_SmartHome_01",
+    "location":     "Lab_Room"
+  },
+  "publisher": {
+    "interval_seconds": 5,
+    "qos": 1
+  }
+}

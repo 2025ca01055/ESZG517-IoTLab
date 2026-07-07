@@ -1,0 +1,182 @@
+[
+  {
+    "id": "tab_l2_student",
+    "type": "tab",
+    "label": "L2 — Weather Station",
+    "disabled": false,
+    "info": "ESZG517 Lab Session L2 — Node-RED path.\n\nSETUP (do this after importing):\n  1. Double-click HiveMQ node → enter your broker credentials\n  2. Double-click both InfluxDB out nodes → enter your InfluxDB credentials\n  3. Click Deploy — HiveMQ node should show 'connected'\n\nDEMO SENSORS (1–5): pre-wired for you — follow the instructor.\nYOUR ASSIGNMENT (6–10): complete the Assignment Sensors function node.\n\nSUBMISSION: Menu (☰) → Export → Download → commit to GitHub."
+  },
+
+  {
+    "id": "s_mqtt_in",
+    "type": "mqtt in",
+    "z": "tab_l2_student",
+    "name": "HiveMQ — Subscribe",
+    "topic": "eszg517/lab/weather/+",
+    "qos": "1",
+    "datatype": "auto",
+    "broker": "s_mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "x": 140,
+    "y": 160,
+    "wires": [["s_parse_json"]]
+  },
+
+  {
+    "id": "s_parse_json",
+    "type": "json",
+    "z": "tab_l2_student",
+    "name": "Parse JSON",
+    "property": "payload",
+    "action": "obj",
+    "pretty": false,
+    "x": 340,
+    "y": 160,
+    "wires": [["s_fn_demo", "s_fn_assignment", "s_debug_raw"]]
+  },
+
+  {
+    "id": "s_debug_raw",
+    "type": "debug",
+    "z": "tab_l2_student",
+    "name": "Raw Payload",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "x": 340,
+    "y": 80,
+    "wires": []
+  },
+
+  {
+    "id": "s_fn_demo",
+    "type": "function",
+    "z": "tab_l2_student",
+    "name": "Demo Sensors (1–5) ✅",
+    "func": "// ══════════════════════════════════════════════════════════\n// DEMO — Instructor walks through this. You follow along.\n// This node is already complete.\n// ══════════════════════════════════════════════════════════\n\nconst data = msg.payload;\n\nif (!data.device_id || data.temperature === undefined) {\n    node.warn('Missing required fields — skipping');\n    return null;\n}\n\nmsg.payload = [\n    {\n        measurement: 'weather_station',\n        tags: { device_id: data.device_id },\n        fields: {\n            temperature: parseFloat(data.temperature),\n            humidity:    parseFloat(data.humidity),\n            pressure:    parseFloat(data.pressure),\n            co2:         parseFloat(data.co2_ppm || data.co2 || 0),\n            aqi:         parseFloat(data.aqi)\n        },\n        timestamp: new Date()\n    }\n];\n\nnode.log('Demo: ' + data.device_id + ' temp=' + data.temperature);\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 560,
+    "y": 120,
+    "wires": [["s_influx_demo", "s_debug_demo"]]
+  },
+
+  {
+    "id": "s_fn_assignment",
+    "type": "function",
+    "z": "tab_l2_student",
+    "name": "Assignment Sensors (6–10) ⬜ YOUR TASK",
+    "func": "// ══════════════════════════════════════════════════════════\n// YOUR ASSIGNMENT — complete this function node.\n//\n// ANSWER (type this into the return statement below):\n//\n// const data = msg.payload;\n// if (!data.device_id) return null;\n//\n// const light_level     = data.light_level     !== undefined ? parseFloat(data.light_level)     : parseFloat((Math.random()*600+200).toFixed(1));\n// const wind_speed      = data.wind_speed      !== undefined ? parseFloat(data.wind_speed)      : parseFloat((Math.random()*10).toFixed(1));\n// const rainfall        = data.rainfall        !== undefined ? parseFloat(data.rainfall)        : parseFloat((Math.random()*2).toFixed(2));\n// const battery_voltage = data.battery_voltage !== undefined ? parseFloat(data.battery_voltage) : parseFloat((3.6+Math.random()*0.6).toFixed(2));\n// const rssi            = data.rssi            !== undefined ? parseInt(data.rssi)              : -Math.floor(Math.random()*30+50);\n//\n// msg.payload = [{\n//     measurement: 'weather_station',\n//     tags: { device_id: data.device_id },\n//     fields: { light_level, wind_speed, rainfall, battery_voltage, rssi },\n//     timestamp: new Date()\n// }];\n//\n// node.log('Assignment: ' + data.device_id + ' light=' + light_level);\n// return msg;\n// ══════════════════════════════════════════════════════════\n\n// ── TYPE YOUR CODE BELOW ─────────────────────────────────\n\n\n\nreturn null; // remove this line when your code is complete",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 590,
+    "y": 220,
+    "wires": [["s_influx_assignment", "s_debug_assignment"]]
+  },
+
+  {
+    "id": "s_influx_demo",
+    "type": "influxdb out",
+    "z": "tab_l2_student",
+    "influxdb": "s_influxdb_config",
+    "name": "InfluxDB — Demo Write",
+    "measurement": "weather_station",
+    "precision": "",
+    "retentionPolicy": "",
+    "precisionV18FluxV20": "ms",
+    "org": "",
+    "bucket": "",
+    "x": 860,
+    "y": 120,
+    "wires": []
+  },
+
+  {
+    "id": "s_influx_assignment",
+    "type": "influxdb out",
+    "z": "tab_l2_student",
+    "influxdb": "s_influxdb_config",
+    "name": "InfluxDB — Assignment Write",
+    "measurement": "weather_station",
+    "precision": "",
+    "retentionPolicy": "",
+    "precisionV18FluxV20": "ms",
+    "org": "",
+    "bucket": "",
+    "x": 880,
+    "y": 220,
+    "wires": []
+  },
+
+  {
+    "id": "s_debug_demo",
+    "type": "debug",
+    "z": "tab_l2_student",
+    "name": "Demo Debug",
+    "active": true,
+    "tosidebar": true,
+    "complete": "payload",
+    "x": 860,
+    "y": 60,
+    "wires": []
+  },
+
+  {
+    "id": "s_debug_assignment",
+    "type": "debug",
+    "z": "tab_l2_student",
+    "name": "Assignment Debug",
+    "active": true,
+    "tosidebar": true,
+    "complete": "payload",
+    "x": 880,
+    "y": 280,
+    "wires": []
+  },
+
+  {
+    "id": "s_mqtt_broker",
+    "type": "mqtt-broker",
+    "name": "HiveMQ Cloud",
+    "broker": "REPLACE_WITH_YOUR_HIVEMQ_HOST",
+    "port": "8883",
+    "tls": true,
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": true,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "credentials": {
+      "user": "REPLACE_WITH_YOUR_USERNAME",
+      "password": "REPLACE_WITH_YOUR_PASSWORD"
+    }
+  },
+
+  {
+    "id": "s_influxdb_config",
+    "type": "influxdb",
+    "hostname": "REPLACE_WITH_YOUR_INFLUXDB_HOST",
+    "port": "443",
+    "protocol": "https",
+    "database": "REPLACE_WITH_YOUR_BUCKET",
+    "name": "InfluxDB Cloud",
+    "usetls": true,
+    "influxdbVersion": "2.0",
+    "url": "REPLACE_WITH_YOUR_INFLUXDB_URL",
+    "rejectUnauthorized": true,
+    "credentials": {
+      "token": "REPLACE_WITH_YOUR_INFLUXDB_TOKEN"
+    }
+  }
+]
