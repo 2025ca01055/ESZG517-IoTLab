@@ -4,9 +4,9 @@ ESZG517 — Internet of Things: Design and Development
 Lab Session L1 — Sensor to Cloud
 Student Skeleton File: l1_publisher.py
 
-Name   : ___________________________
-USN    : ___________________________
-Date   : ___________________________
+Name   : Bhagyashri Maruti Pasalkar
+USN    : 2025ca01055
+Date   : 02/07/2026
 
 How this file works:
   1. The IoTLab Emulator runs and writes sensor data to a
@@ -27,7 +27,7 @@ Architecture:
 # SECTION 1 — IMPORTS
 # Already provided. Do not change anything here.
 # ============================================================
-
+import sys
 import paho.mqtt.client as mqtt
 import ssl
 import json
@@ -54,23 +54,24 @@ PUB_LOCK  = DATA_DIR / "publisher_active.lock" # you create this to signal emula
 # ============================================================
 
 # TODO 3.1 — Replace with your HiveMQ Cloud cluster URL
-BROKER   = "YOUR_CLUSTER_URL_HERE"
+BROKER   = "f0cb0c0ce8894c3aaf72971b5d3d6782.s1.eu.hivemq.cloud"
 
 # TODO 3.2 — Port for TLS. HiveMQ Cloud requires 8883.
-PORT     = 0   # TODO: set the correct port
+PORT     = 8883  # TODO: set the correct port
 
 # TODO 3.3 — Your HiveMQ credentials
-USERNAME = "YOUR_USERNAME_HERE"
-PASSWORD = "YOUR_PASSWORD_HERE"
+USERNAME = "2025ca01055"
+PASSWORD = "Pasalkar@123"
 
 # TODO 3.4 — Your university student number (USN)
 # This appears in the MQTT topic so the instructor can
 # identify your data in HiveMQ and InfluxDB.
-DEVICE_ID = "YOURUSN"
+DEVICE_ID = "2025ca01055"
 
 # TODO 3.5 — Construct your MQTT topic using your DEVICE_ID
 # Format: eszg517/lab/weather/<your_USN>
 TOPIC = "eszg517/lab/weather/" + DEVICE_ID
+print ("eszg517/lab/weather/ {DEVICE_ID}")
 
 # How often to publish (seconds) — do not change
 PUBLISH_INTERVAL = 5
@@ -105,6 +106,12 @@ def check_emulator() -> bool:
     # Return False.
     #
     # Hint: use EMU_LOCK.exists() to check if the file exists.
+  
+
+    if not EMU_LOCK.exists():
+        print("[ERROR] IoTLab Emulator is not running.")
+        print("        Start IoTLabEmulator before running this script.")
+        return False
 
 
     # TODO 4.2 — Check the data file exists.
@@ -113,7 +120,10 @@ def check_emulator() -> bool:
     # Print: "[ERROR] No sensor data found."
     #        "        Enable a sensor panel in the emulator (toggle the Enable switch)."
     # Return False.
-
+    if not DATA_FILE.exists():
+        print ("[ERROR] No sensor data found.")
+        print("         Start IoTLabEmulator before running this script.")
+        return False
 
     # TODO 4.3 — Check the data is fresh (not older than 10 seconds).
     # Read the data file and get the timestamp from data["meta"]["last_updated"].
@@ -125,6 +135,14 @@ def check_emulator() -> bool:
     #   with open(DATA_FILE) as f:
     #       data = json.load(f)
     #   timestamp = data["meta"]["last_updated"]
+    try:
+        with open(DATA_FILE) as f:
+            data = json.load(f)
+        age = int(time.time()) - data["meta"]["last_updated"]
+        if age > 10:
+            print(f"[WARNING] Emulator data is {age}s old. Is a sensor panel enabled?")
+    except Exception as e:
+        print(f"[WARNING] Could not verify data freshness: {e}")
 
 
     # If all checks pass, return True
@@ -168,6 +186,13 @@ def read_emulator_data() -> dict:
     # Inside except (FileNotFoundError, json.JSONDecodeError, KeyError):
     #   Print: "[ERROR] Could not read emulator data: <error message>"
     #   Return {}   (empty dictionary)
+    try:
+        with open(DATA_FILE) as f:
+            data = json.load(f)
+        return data["weather"]
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        print(f"[ERROR] Could not read emulator data: {e}")
+        return {}
 
     pass   # replace this with your implementation
 
@@ -204,7 +229,9 @@ def build_payload(sensor_data: dict) -> dict:
     # If the dictionary is empty (emulator not producing data),
     # print a warning and return {}.
     # Use: if not sensor_data:
-
+    if not sensor_data:
+        print(" [WARNING] No sensor data available. Is a sensor panel enabled?")
+        return {}
 
     # TODO 6.2 — Extract the 5 in-session sensor fields.
     # Get each value from sensor_data using the correct key name.
@@ -217,12 +244,37 @@ def build_payload(sensor_data: dict) -> dict:
     # co2_ppm      = ...
     # aqi          = ...
 
+    temperature = round(sensor_data.get("temperature",       0.0), 2)
+    humidity    = round(sensor_data.get("humidity",          0.0), 2) 
+    pressure    = round(sensor_data.get("pressure",          0.0), 2) 
+    co2_ppm     = round(sensor_data.get("co2_ppm",           0.0), 2)
+    aqi         = round(sensor_data.get("aqi",               0.0), 2)
+    light_lux   = round(sensor_data.get("light_lux",         0.0), 2)
+    wind_speed  = round(sensor_data.get("wind_speed",        0.0), 2)
+    wind_direction = round(sensor_data.get("wind_direction", 0.0), 2)
+    rainfall_mm = round(sensor_data.get("rainfall_mm",       0.0), 2)
+    battery_pct = round(sensor_data.get("battery_pct",       0.0), 2)
 
     # TODO 6.3 — Return the complete payload dictionary.
     # Include: device_id, temperature, humidity, pressure,
     #          co2_ppm, aqi, timestamp
     # timestamp = int(time.time())
-    return {}   # replace this
+     
+    return {
+        "device_id": DEVICE_ID,
+        "temperature": temperature,
+        "humidity": humidity,
+        "pressure": pressure,
+        "co2": co2_ppm,
+        "aqi": aqi,
+        "light_level": light_lux,
+        "wind_speed": wind_speed,
+        "wind_direction": wind_direction,
+        "rainfall": rainfall_mm,
+        "battery_voltage": battery_pct,
+        "rssi": sensor_data.get("rssi", -70),
+        "timestamp": int(time.time())
+}
 
 
     # ── EXTENDED EVALUATION ────────────────────────────────────
@@ -263,13 +315,23 @@ def on_connect(client, userdata, flags, rc):
     #     4: "Bad username or password",
     #     5: "Not authorised"
     # }
+    rc_messages = {
+        0:"Connected successfully", 1:"Incorrect protocol version",
+        2:"Invalid client identifier", 3:"Server unavailable",
+        4:"Bad username or password", 5:"Not authorised"
+    }
+    if rc == 0:
+         print(f"[MQTT] Connected to {BROKER} | Topic: {TOPIC}")
+    else:
+         print(f"[MQTT] Connection failed — {rc_messages.get(rc, f'Unknown ({rc})')}")
+
 
 
 def on_publish(client, userdata, mid):
     """Called when broker confirms message receipt (QoS 1 PUBACK)."""
-
+	
     # TODO 7.2 — Print broker confirmation with message ID.
-
+    print (f" (MOTT) Broker confirmed message (id-{mid})")
 
 # ============================================================
 # SECTION 8 — MQTT CLIENT SETUP
@@ -289,20 +351,26 @@ def setup_mqtt_client():
     """
 
     # TODO 8.1 — Create MQTT client with your DEVICE_ID as client_id.
-    client = None   # replace this
+    client = mqtt.Client(client_id=DEVICE_ID)
 
     # TODO 8.2 — Set username and password.
+    client.username_pw_set(USERNAME, PASSWORD)
 
     # TODO 8.3 — Enable TLS encryption.
     # client.tls_set(tls_version=ssl.PROTOCOL_TLS)
+    client.tls_set(tls_version=ssl.PROTOCOL_TLS)
 
     # TODO 8.4 — Register callbacks.
+    client.on_connect = on_connect
+    client.on_publish = on_publish 
 
     # TODO 8.5 — Connect to broker.
     # client.connect(BROKER, PORT, keepalive=60)
+    client.connect(BROKER, PORT, keepalive=60)
 
     # TODO 8.6 — Start background loop.
     # client.loop_start()
+    client.loop_start()
 
     time.sleep(2)   # wait for connection to establish
     return client
@@ -320,26 +388,33 @@ def create_publisher_lock():
     this publisher is connected.
     """
     # TODO 9.1 — Write your DEVICE_ID to the PUB_LOCK file.
-    # PUB_LOCK.write_text(DEVICE_ID)
+
+    PUB_LOCK.write_text(DEVICE_ID)
+
     # The emulator checks this file's modification time to
     # confirm the publisher is still active.
-    pass
+  
 
 
 def update_publisher_lock():
     """Touch the lock file to show publisher is still alive."""
     # TODO 9.2 — Update the file modification time.
-    # Use: PUB_LOCK.touch()
+
+    PUB_LOCK.touch()
+
     # Call this every publish cycle so the emulator knows
     # the publisher has not crashed.
-    pass
+    
 
 
 def remove_publisher_lock():
     """Remove lock file on clean exit."""
     # TODO 9.3 — Delete the lock file on shutdown.
     # Use try/except in case the file does not exist.
-    pass
+    try:
+         PUB_LOCK.unlink()
+    except FileNotFoundError:
+         pass
 
 
 # ============================================================
@@ -359,16 +434,17 @@ def main():
     # Call check_emulator().
     # If it returns False, print a message and exit.
     # Use sys.exit(1) to exit — import sys at the top if needed.
-
+    if not check_emulator():
+        sys.exit(1)
 
     print("\n[INFO] Emulator check passed. Connecting to HiveMQ...\n")
 
     # TODO 10.2 — Set up the MQTT client.
-    # client = setup_mqtt_client()
+    client = setup_mqtt_client()
 
 
     # TODO 10.3 — Create the publisher lock file.
-    # create_publisher_lock()
+    create_publisher_lock()
 
 
     print(f"[INFO] Publishing to {TOPIC} every {PUBLISH_INTERVAL}s")
@@ -376,29 +452,30 @@ def main():
 
     # TODO 10.4 — Implement the publish loop with clean shutdown.
     #
-    # try:
-    #     while True:
-    #         sensor_data = read_emulator_data()
-    #         payload_dict = build_payload(sensor_data)
-    #
-    #         if payload_dict:   # only publish if we have valid data
-    #             payload_json = json.dumps(payload_dict)
-    #             client.publish(TOPIC, payload_json, qos=1)
-    #             ts = time.strftime("%H:%M:%S")
-    #             print(f"[{ts}] PUB --> {TOPIC}")
-    #             print(f"         {payload_json}\n")
-    #
-    #         update_publisher_lock()   # keep the emulator indicator green
-    #         time.sleep(PUBLISH_INTERVAL)
-    #
-    # except KeyboardInterrupt:
-    #     print("\n[INFO] Stopping publisher...")
-    #
-    # finally:
-    #     remove_publisher_lock()
-    #     client.loop_stop()
-    #     client.disconnect()
-    #     print("[INFO] Disconnected cleanly.")
+    try:
+        while True:
+             sensor_data = read_emulator_data()
+             print("DEBUG:", sensor_data)
+             payload_dict = build_payload(sensor_data)
+    
+             if payload_dict:   # only publish if we have valid data
+                 payload_json = json.dumps(payload_dict)
+                 client.publish(TOPIC, payload_json, qos=1)
+                 ts = time.strftime("%H:%M:%S")
+                 print(f"[{ts}] PUB --> {TOPIC}")
+                 print(f"         {payload_json}\n")
+    
+             update_publisher_lock()   # keep the emulator indicator green
+             time.sleep(PUBLISH_INTERVAL)
+    
+    except KeyboardInterrupt:
+         print("\n[INFO] Stopping publisher...")
+    
+    finally:
+         remove_publisher_lock()
+         client.loop_stop()
+         client.disconnect()
+         print("[INFO] Disconnected cleanly.")
 
 
 # ============================================================
