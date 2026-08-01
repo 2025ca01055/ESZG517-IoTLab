@@ -1,0 +1,170 @@
+[
+    {
+        "id": "tab_l3",
+        "type": "tab",
+        "label": "L3 Smart Home",
+        "disabled": false,
+        "info": "ESZG517 L3/L4 Smart Home Flow"
+    },
+    {
+        "id": "mqtt_in_motion",
+        "type": "mqtt in",
+        "z": "tab_l3",
+        "name": "Subscribe: PIR Motion",
+        "topic": "smarthome/YOUR_USN/living_room/pir/motion",
+        "qos": "1",
+        "datatype": "auto",
+        "broker": "hivemq_broker",
+        "x": 140,
+        "y": 100,
+        "wires": [["json_motion"]]
+    },
+    {
+        "id": "json_motion",
+        "type": "json",
+        "z": "tab_l3",
+        "name": "Parse JSON",
+        "action": "obj",
+        "pretty": false,
+        "x": 340,
+        "y": 100,
+        "wires": [["function_auto_off", "ui_motion_status"]]
+    },
+    {
+        "id": "function_auto_off",
+        "type": "function",
+        "z": "tab_l3",
+        "name": "Auto-Off Timer Logic",
+        "func": "var motion = msg.payload.motion;\n\nif (motion === true) {\n    var existingTimer = context.get('timer');\n    if (existingTimer) {\n        clearTimeout(existingTimer);\n        context.set('timer', null);\n    }\n    msg.payload = { light_state: 'ON', room: 'living_room' };\n    return msg;\n} else {\n    var t = setTimeout(function() {\n        node.send({ payload: { light_state: 'OFF', room: 'living_room' } });\n    }, 60000);\n    context.set('timer', t);\n    return null;\n}",
+        "outputs": 1,
+        "x": 540,
+        "y": 100,
+        "wires": [["mqtt_out_light_json"]]
+    },
+    {
+        "id": "mqtt_out_light_json",
+        "type": "json",
+        "z": "tab_l3",
+        "name": "Stringify for publish",
+        "action": "str",
+        "pretty": false,
+        "x": 760,
+        "y": 100,
+        "wires": [["mqtt_out_light"]]
+    },
+    {
+        "id": "mqtt_out_light",
+        "type": "mqtt out",
+        "z": "tab_l3",
+        "name": "Publish: Light State",
+        "topic": "smarthome/YOUR_USN/living_room/relay/light_state",
+        "qos": "1",
+        "retain": "true",
+        "broker": "hivemq_broker",
+        "x": 980,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "mqtt_in_light",
+        "type": "mqtt in",
+        "z": "tab_l3",
+        "name": "Subscribe: Light State",
+        "topic": "smarthome/YOUR_USN/living_room/relay/light_state",
+        "qos": "1",
+        "datatype": "auto",
+        "broker": "hivemq_broker",
+        "x": 140,
+        "y": 260,
+        "wires": [["json_light"]]
+    },
+    {
+        "id": "json_light",
+        "type": "json",
+        "z": "tab_l3",
+        "name": "Parse JSON",
+        "action": "obj",
+        "pretty": false,
+        "x": 340,
+        "y": 260,
+        "wires": [["function_light_format"]]
+    },
+    {
+        "id": "function_light_format",
+        "type": "function",
+        "z": "tab_l3",
+        "name": "Format Light State for Dashboard",
+        "func": "msg.payload = 'Light: ' + msg.payload.light_state;\nreturn msg;",
+        "outputs": 1,
+        "x": 560,
+        "y": 260,
+        "wires": [["ui_light_state"]]
+    },
+    {
+        "id": "ui_motion_status",
+        "type": "ui_text",
+        "z": "tab_l3",
+        "name": "Dashboard: Motion Status",
+        "group": "ui_group_smarthome",
+        "order": 1,
+        "width": 6,
+        "height": 1,
+        "label": "Motion",
+        "format": "{{msg.payload.motion}}",
+        "layout": "row-spread",
+        "x": 580,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "ui_light_state",
+        "type": "ui_text",
+        "z": "tab_l3",
+        "name": "Dashboard: Light State",
+        "group": "ui_group_smarthome",
+        "order": 2,
+        "width": 6,
+        "height": 1,
+        "label": "Light",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 800,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "hivemq_broker",
+        "type": "mqtt-broker",
+        "name": "HiveMQ Cloud",
+        "broker": "YOUR_CLUSTER.s1.eu.hivemq.cloud",
+        "port": "8883",
+        "tls": true,
+        "clientid": "nodered_l3",
+        "autoConnect": true,
+        "usetls": true,
+        "compatmode": false,
+        "keepalive": "60",
+        "cleansession": true,
+        "credentials": {
+            "user": "iotlab26S1",
+            "password": "YOUR_PASSWORD"
+        }
+    },
+    {
+        "id": "ui_group_smarthome",
+        "type": "ui_group",
+        "name": "Smart Home - Living Room",
+        "tab": "ui_tab_smarthome",
+        "order": 1,
+        "disp": true,
+        "width": "12"
+    },
+    {
+        "id": "ui_tab_smarthome",
+        "type": "ui_tab",
+        "name": "Smart Home",
+        "icon": "home",
+        "disabled": false,
+        "hidden": false
+    }
+]
