@@ -63,7 +63,7 @@ Double-click **Subscribe: Light State** → set Server to same broker → **Done
 
 Double-click **Publish: Light State** → set Server to same broker → click pencil icon → check TLS dropdown has a config selected (if empty, click + next to it, leave blank, click Add) → **Update** → **Done**.
 
-> ⚠️ Configure once, deploy once. Do NOT keep clicking Deploy — HiveMQ will rate limit you. If stuck on connecting, wait 2 minutes and restart Node-RED.
+
 
 ### Step 5: Update topics
 
