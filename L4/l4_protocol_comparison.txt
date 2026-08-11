@@ -1,0 +1,81 @@
+Q1. What transport protocol does MQTT use? What transport protocol does CoAP use? What   is the fundamental difference between the two?
+	Answer:
+	MQTT uses TCP as its transport protocol, while CoAP uses UDP. TCP provides reliable, ordered delivery of data, whereas UDP is connectionless and has lower overhead but does not guarantee delivery.
+
+Q2. In today's session, MQTT used a publish/subscribe model and CoAP used a request/response model. Explain the difference using the smart home scenario.
+	Answer:
+	In MQTT, sensors publish data to a broker, and devices that subscribe to a topic automatically receive updates. For example, a temperature sensor publishes readings, and the respected device receives 	them instantly. In CoAP, the respected device sends a request to the smart light and receives a response directly, such as requesting the current light status or changing it.
+
+Q3. Report the CoAP GET latency values you measured during the session. Is CoAP fast enough for real-time light control?
+	Answer:
+	Measured GET latency:
+	Min = 0.0 ms
+	Max= 2. 0 ms
+	Average= 0.95ms
+	Yes, CoAP is fast enough for real-time light control because the response time is only a few milliseconds. This delay is very small and users would not notice it when switching a smart light on or off.
+
+Q4. In your L3 MQTT publisher, the light relay topic used retain=True. CoAP does not have a retain flag. How does CoAP handle the same problem?
+	Answer:
+	CoAP stores the current state on the server. When a client wants to know whether the light is ON or OFF, it sends a GET request, and the server returns the current state.
+
+Q5. MQTT uses TLS for security. CoAP uses DTLS. Why can't CoAP use TLS? What is the key difference?
+	Answer:
+	TLS works with TCP, while CoAP uses UDP. Therefore, CoAP uses DTLS, which provides similar security features but is designed for unreliable UDP communication.
+
+Q6. In a real smart home, where would the CoAP server and client run?
+	Answer:
+	The CoAP server would run on the smart device, such as an ESP32 controlling a light relay. The CoAP client would run on a mobile app or a home automation controller that sends commands to the smart 	device.
+
+Q7. A student says: "CoAP is always better than MQTT because UDP is faster than TCP." What is wrong with this argument?
+	Answer:
+	This is incorrect because speed is not the only factor. MQTT is better for applications that require reliable message delivery, such as continuously sending sensor data to the cloud, because TCP 	guarantees that messages arrive correctly.
+
+Q8. In the CoAP server code, render_get returns aiocoap.CONTENT and render_put returns aiocoap.CHANGED. What do these response codes mean? What is the equivalent concept in HTTP?
+	Answer:
+	aiocoap.CONTENT means the requested data was successfully returned, while aiocoap.CHANGED means the resource was successfully updated. They are similar to HTTP status codes such as 200 OK and 204 No 	Content.
+
+Q9. The CoAP client measured latency by recording time before and after each GET request. List two factors that could increase round-trip time.
+	Answer:
+	Network congestion or Wi-Fi interference.
+	Slow processing by the server or limited device resources.
+
+Q10. For the smart home system, you designed in L3, which protocol would you use for each and why?
+(a) Publishing continuous temperature readings to the cloud
+	Answer: 
+	MQTT, because it efficiently sends continuous sensor updates using the publish/subscribe model.
+
+(b) Turning a light relay ON or OFF from a mobile app
+	Answer: 
+	CoAP, because it provides fast request/response communication for direct device control.
+
+(c) Detecting motion events in real time
+	Answer: 
+	MQTT, because motion events can be published immediately to all subscribed devices, such as alarms and mobile apps.
+
+
+
+L5
+
+1.	In the unencrypted MQTT demo, Wireshark showed the MQTT payload in plain text. Name two specific pieces of information visible in the packet that an attacker could exploit in a real smart home deployment.
+	Answer:
+		I.	The MQTT topic name (e.g., smarthome/demo/living_room/relay/light_state), which reveals the device being controlled. 
+		II.	The message payload, such as {"light_state":"ON","room":"living_room"}, which reveals the device status or command being sent. 
+
+2.	In the TLS demo, the same message was sent but Wireshark showed no readable payload. Explain in one sentence why TLS prevents Wireshark from seeing the message content even though both demos used the same loopback interface.
+	Answer:
+	TLS encrypts the MQTT data before it is transmitted, so Wireshark can capture the packets but cannot read the message contents without the encryption keys.
+
+3.	Look at your anomaly detection graph. Identify the three anomaly events marked as red dots and for each one state which sensor was affected and what the approximate value was. Why would these values be considered anomalous in a real smart home?
+	Answer:
+		I.	Temperature anomaly 
+			•Sensor: Indoor Temperature 
+			•Approximate value: 42°C 
+			•Reason: The normal indoor temperature is around 20–24°C. A reading of about 42°C is unusually high and could indicate overheating, a fire hazard, or a faulty sensor. 
+		II.	Smoke anomaly 
+			•Sensor: Smoke 
+			•Approximate value: 88–90 ppm 
+			•Reason: The normal smoke level is approximately 3–7 ppm. A sudden increase to around 90 ppm could indicate smoke from a fire or another dangerous event that requires immediate 				attention. 
+		III.	Sound anomaly 
+			•Sensor: Sound 
+			•Approximate value: 95 dB 
+			•Reason: Normal indoor sound levels are about 35–45 dB. A sound level of around 95 dB is unusually loud and may indicate an alarm, breaking glass, or another abnormal event in the home.
